@@ -145,6 +145,7 @@
         <module>distribution</module>
         <module>dubbo-samples</module>
         <module>dubbo-samples-annotation</module>
+        <module>dubbo-samples-apiinvoke</module>
     </modules>
 
     <dependencyManagement>
