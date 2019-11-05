@@ -4,6 +4,8 @@ import com.alibaba.dubbo.samples.echo.api.EchoService;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
+ * Echo客户端，基于XML方式消费服务
+ *
  * @author zhengguinan
  */
 public class EchoConsumer {
