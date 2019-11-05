@@ -8,7 +8,7 @@ public class EchoProvider {
 
     public static void main(String[] args) throws IOException {
         // 指定服务暴露配置文件
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"spring/echo-provider.xml"});
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/echo-provider.xml"});
         // 启动Spring容器并暴露服务
         context.start();
 
