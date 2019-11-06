@@ -165,6 +165,7 @@ public class RedisRegistry extends FailbackRegistry {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    // 过期key清理
                     for (URL url : new HashSet<URL>(getRegistered())) {
                         if (url.getParameter(Constants.DYNAMIC_KEY, true)) {
                             String key = toCategoryPath(url);
@@ -174,6 +175,7 @@ public class RedisRegistry extends FailbackRegistry {
                         }
                     }
                     if (admin) {
+                        // 如果是服务治理中心，则还要清理过期的key
                         clean(jedis);
                     }
                     if (!replicate) {
@@ -272,14 +274,17 @@ public class RedisRegistry extends FailbackRegistry {
         boolean success = false;
         RpcException exception = null;
         for (Map.Entry<String, JedisPool> entry : jedisPools.entrySet()) {
+            // 遍历连接池中所有的节点
             JedisPool jedisPool = entry.getValue();
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    // 向Redis中注册，并在通道中发布注册事件
                     // 注册到Redis注册中心，expire为超时时间
                     jedis.hset(key, value, expire);
                     jedis.publish(key, Constants.REGISTER);
                     success = true;
+                    // 如果Redis使用replicate模式，只需要写一个节点，因此可以直接“break”；否则遍历所有节点，依次写入注册信息
                     if (!replicate) {
                         break; //  If the server side has synchronized data, just write a single machine
                     }
@@ -591,6 +596,7 @@ public class RedisRegistry extends FailbackRegistry {
                                                         doNotify(jedis, s);
                                                     }
                                                 }
+                                                // 由于连接过程允许一定量的失败，会做重置，此处则重置了计数器
                                                 resetSkip();
                                             }
                                             jedis.psubscribe(new NotifySub(jedisPool), service); // blocking

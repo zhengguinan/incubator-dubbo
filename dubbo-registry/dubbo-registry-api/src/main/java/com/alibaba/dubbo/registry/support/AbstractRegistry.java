@@ -194,6 +194,7 @@ public abstract class AbstractRegistry implements Registry {
         if (file != null && file.exists()) {
             InputStream in = null;
             try {
+                // 读取磁盘上的文件
                 in = new FileInputStream(file);
                 properties.load(in);
                 if (logger.isInfoEnabled()) {
@@ -349,7 +350,9 @@ public abstract class AbstractRegistry implements Registry {
     }
 
     protected void notify(List<URL> urls) {
-        if (urls == null || urls.isEmpty()) return;
+        if (urls == null || urls.isEmpty()) {
+            return;
+        }
 
         for (Map.Entry<URL, Set<NotifyListener>> entry : getSubscribed().entrySet()) {
             URL url = entry.getKey();
@@ -436,8 +439,10 @@ public abstract class AbstractRegistry implements Registry {
             properties.setProperty(url.getServiceKey(), buf.toString());
             long version = lastCacheChanged.incrementAndGet();
             if (syncSaveFile) {
+                // 同步保存
                 doSaveProperties(version);
             } else {
+                // 异步保存，放入现成池。
                 registryCacheExecutor.execute(new SaveProperties(version));
             }
         } catch (Throwable t) {

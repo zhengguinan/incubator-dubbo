@@ -37,13 +37,19 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AbstractRegistryFactory implements RegistryFactory {
 
-    // Log output
+    /**
+     * Log output
+     */
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRegistryFactory.class);
 
-    // The lock for the acquisition process of the registry
+    /**
+     * The lock for the acquisition process of the registry
+     */
     private static final ReentrantLock LOCK = new ReentrantLock();
 
-    // Registry Collection Map<RegistryAddress, Registry>
+    /**
+     * Registry Collection Map<RegistryAddress, Registry>
+     */
     private static final Map<String, Registry> REGISTRIES = new ConcurrentHashMap<String, Registry>();
 
     /**
