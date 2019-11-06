@@ -111,6 +111,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     protected void doRegister(URL url) {
         try {
+            // zkClient创建目录
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -120,6 +121,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     protected void doUnregister(URL url) {
         try {
+            // 取消发布
             zkClient.delete(toUrlPath(url));
         } catch (Throwable e) {
             throw new RpcException("Failed to unregister " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -130,9 +132,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
     protected void doSubscribe(final URL url, final NotifyListener listener) {
         try {
             if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+                // 订阅所有数据
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                 if (listeners == null) {
+                    // 把listeners放入缓存
                     zkListeners.putIfAbsent(url, new ConcurrentHashMap<NotifyListener, ChildListener>());
                     listeners = zkListeners.get(url);
                 }
@@ -141,9 +145,12 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     listeners.putIfAbsent(listener, new ChildListener() {
                         @Override
                         public void childChanged(String parentPath, List<String> currentChilds) {
+                            // 这是内部类方法，不会立即执行，只会在触发变更通知时执行
                             for (String child : currentChilds) {
+                                // 如果子节点有变化则会接到通知，遍历所有的子节点
                                 child = URL.decode(child);
                                 if (!anyServices.contains(child)) {
+                                    // 如果存在子节点还未被订阅，说明是新的节点，则订阅
                                     anyServices.add(child);
                                     subscribe(url.setPath(child).addParameters(Constants.INTERFACE_KEY, child,
                                             Constants.CHECK_KEY, String.valueOf(false)), listener);
@@ -153,6 +160,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     });
                     zkListener = listeners.get(listener);
                 }
+                // 创建持久节点，接下来订阅持久节点的直接子节点
                 zkClient.create(root, false);
                 List<String> services = zkClient.addChildListener(root, zkListener);
                 if (services != null && !services.isEmpty()) {
@@ -165,6 +173,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 }
             } else {
                 List<URL> urls = new ArrayList<URL>();
+                // 根据URL类别，获取一组要订阅的路径
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                     if (listeners == null) {
@@ -182,11 +191,13 @@ public class ZookeeperRegistry extends FailbackRegistry {
                         zkListener = listeners.get(listener);
                     }
                     zkClient.create(path, false);
+                    // 订阅，返回该节点下的子路径并缓存
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                // 回调NotifyListener，更新本地缓存信息
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {

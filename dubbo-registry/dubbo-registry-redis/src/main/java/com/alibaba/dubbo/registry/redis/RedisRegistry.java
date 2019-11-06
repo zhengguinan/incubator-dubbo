@@ -264,7 +264,9 @@ public class RedisRegistry extends FailbackRegistry {
 
     @Override
     public void doRegister(URL url) {
+        // 生成Redis key
         String key = toCategoryPath(url);
+        // 生成URL
         String value = url.toFullString();
         String expire = String.valueOf(System.currentTimeMillis() + expirePeriod);
         boolean success = false;
@@ -274,6 +276,7 @@ public class RedisRegistry extends FailbackRegistry {
             try {
                 Jedis jedis = jedisPool.getResource();
                 try {
+                    // 注册到Redis注册中心，expire为超时时间
                     jedis.hset(key, value, expire);
                     jedis.publish(key, Constants.REGISTER);
                     success = true;
